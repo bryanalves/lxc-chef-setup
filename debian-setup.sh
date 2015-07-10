@@ -19,6 +19,7 @@ useradd chefdeploy
 groupadd wheel
 
 apt-get install --force-yes -fuy debian-keyring
+apt-get update
 apt-get install sudo
 gpasswd -a chefdeploy wheel
 echo "%wheel         ALL = (ALL) NOPASSWD: ALL" > /etc/sudoers.d/passwordless_wheel
