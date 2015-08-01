@@ -18,25 +18,22 @@ if [ -z $PLATFORM ]; then
     exit 1
 fi
 
+function lxc_attach_exec {
+    CONTAINER=$1
+    SCRIPT=$2
+
+    <container/$SCRIPT lxc-attach -n $CONTAINER -- \
+        /bin/sh -c "/bin/cat > /root/$SCRIPT ; /bin/chmod +x /root/$SCRIPT"
+
+    lxc-attach -n $CONTAINER --clear-env -- /root/$SCRIPT
+    lxc-attach -n $CONTAINER --clear-env -- rm /root/$SCRIPT
+}
+
 lxc-start -n $CONTAINER 2> /dev/null
 
-## Init
-<container/init.sh lxc-attach -n $CONTAINER -- \
-    /bin/sh -c "/bin/cat > /root/init.sh ; /bin/chmod +x /root/init.sh"
-
-lxc-attach -n $CONTAINER --clear-env -- /root/init.sh
-
-## Platform specific
-<container/$PLATFORM-setup.sh lxc-attach -n $CONTAINER -- \
-    /bin/sh -c "/bin/cat > /root/chef-setup.sh ; /bin/chmod +x /root/chef-setup.sh"
-
-lxc-attach -n $CONTAINER --clear-env -- /root/chef-setup.sh
-
-## Common setup
-<container/common-setup.sh lxc-attach -n $CONTAINER -- \
-    /bin/sh -c "/bin/cat > /root/common-setup.sh ; /bin/chmod +x /root/common-setup.sh"
-
-lxc-attach -n $CONTAINER --clear-env -- /root/common-setup.sh
+lxc_attach_exec $CONTAINER init.sh
+lxc_attach_exec $CONTAINER $PLATFORM-setup.sh
+lxc_attach_exec $CONTAINER common-setup.sh
 
 <ssh_key.pub lxc-attach -n $CONTAINER --clear-env -- \
     /bin/sh -c "/bin/cat >> /home/chefdeploy/.ssh/authorized_keys"
